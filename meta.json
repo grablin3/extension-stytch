@@ -37,6 +37,24 @@
   },
   "scaffoldConfigTemplate": [
     {
+      "key": "stytchProjectId",
+      "label": "Stytch Project ID",
+      "type": "text",
+      "required": true,
+      "description": "Your Stytch project ID (e.g., project-live-xxxxx)",
+      "example": "project-live-xxxxx",
+      "category": "authentication"
+    },
+    {
+      "key": "stytchPublicToken",
+      "label": "Stytch Public Token",
+      "type": "text",
+      "required": true,
+      "description": "Your Stytch public token for frontend (e.g., public-token-live-xxxxx)",
+      "example": "public-token-live-xxxxx",
+      "category": "authentication"
+    },
+    {
       "key": "enableRbac",
       "label": "Enable Role-Based Access Control (RBAC)",
       "type": "boolean",
@@ -65,17 +83,6 @@
   ],
   "runtimeConfigTemplate": [
     {
-      "key": "STYTCH_PROJECT_ID",
-      "description": "Stytch project ID (e.g., project-live-xxxxx)",
-      "required": true,
-      "secret": false,
-      "targets": [
-        "backend",
-        "frontend"
-      ],
-      "commonForAllEnv": true
-    },
-    {
       "key": "STYTCH_SECRET",
       "description": "Stytch project secret (backend only)",
       "required": true,
@@ -84,16 +91,6 @@
         "backend"
       ],
       "commonForAllEnv": false
-    },
-    {
-      "key": "STYTCH_PUBLIC_TOKEN",
-      "description": "Stytch public token for frontend (e.g., public-token-live-xxxxx)",
-      "required": true,
-      "secret": false,
-      "targets": [
-        "frontend"
-      ],
-      "commonForAllEnv": true
     }
   ],
   "dependencies": {

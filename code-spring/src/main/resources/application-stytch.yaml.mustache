@@ -5,9 +5,9 @@ app:
   auth:
     provider: stytch
   stytch:
-    project-id: ${SPRING_ENV_STYTCH_PROJECT_ID}
+    project-id: {{{stytchProjectId}}}
     secret: ${SPRING_ENV_STYTCH_SECRET}
-    role-claim-key: ${SPRING_ENV_STYTCH_ROLE_CLAIM_KEY:{{{roleClaimKey}}}}
+    role-claim-key: {{{roleClaimKey}}}
 {{#tenantIdClaimKey}}
-    tenant-id-claim-key: ${SPRING_ENV_STYTCH_TENANT_ID_CLAIM_KEY:{{{tenantIdClaimKey}}}}
+    tenant-id-claim-key: {{{tenantIdClaimKey}}}
 {{/tenantIdClaimKey}}
