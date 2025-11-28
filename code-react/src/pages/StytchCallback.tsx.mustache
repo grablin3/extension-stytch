@@ -1,0 +1,68 @@
+import { useEffect, useState } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useStytch } from '@stytch/react';
+
+/**
+ * Stytch Callback Page
+ * This page is shown while Stytch processes the magic link authentication
+ * It handles the token from the magic link URL and authenticates the user
+ */
+export function StytchCallback() {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const stytch = useStytch();
+  const [error, setError] = useState<string | null>(null);
+  const [isAuthenticating, setIsAuthenticating] = useState(true);
+
+  useEffect(() => {
+    const authenticate = async () => {
+      const token = searchParams.get('token');
+      const tokenType = searchParams.get('stytch_token_type');
+
+      if (!token || !tokenType) {
+        setError('Invalid authentication link. Please try logging in again.');
+        setIsAuthenticating(false);
+        return;
+      }
+
+      try {
+        // Authenticate with magic link token
+        await stytch.magicLinks.authenticate(token, {
+          session_duration_minutes: 60 * 24 * 7, // 7 days
+        });
+
+        // Redirect to home page on success
+        navigate('/', { replace: true });
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : 'Authentication failed';
+        setError(errorMessage);
+        setIsAuthenticating(false);
+      }
+    };
+
+    authenticate();
+  }, [searchParams, stytch, navigate]);
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-destructive">Authentication Error</h1>
+          <p className="mt-2 text-muted-foreground">{error}</p>
+          <a href="/" className="mt-4 inline-block text-primary hover:underline">
+            Return to Home
+          </a>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex min-h-screen items-center justify-center">
+      <div className="text-center">
+        <h1 className="text-2xl font-bold">Authenticating...</h1>
+        <p className="mt-2 text-muted-foreground">Please wait while we log you in.</p>
+      </div>
+    </div>
+  );
+}

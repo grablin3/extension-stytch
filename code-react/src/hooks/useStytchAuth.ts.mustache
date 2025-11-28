@@ -31,7 +31,10 @@ export function useStytchAuth() {
     setError(null);
 
     try {
-      await stytch.magicLinks.email.loginOrCreate(email);
+      await stytch.magicLinks.email.loginOrCreate(email, {
+        login_magic_link_url: window.location.origin + '/authenticate',
+        signup_magic_link_url: window.location.origin + '/authenticate',
+      });
       // User will receive email with magic link
       return { success: true };
     } catch (err) {

@@ -22,6 +22,9 @@ export function StytchProvider({ children }: StytchProviderProps) {
 
   const stytch = new StytchUIClient(stytchPublicToken);
 
+  // Configure magic link redirect URL
+  const magicLinkRedirectURL = window.location.origin + '/authenticate';
+
   return (
     <StytchReactProvider stytch={stytch}>
       {children}
