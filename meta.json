@@ -94,6 +94,7 @@
     {
       "key": "STYTCH_SECRET",
       "description": "Stytch project secret (backend only)",
+      "example": "secret-live-xxxxx",
       "required": true,
       "secret": true,
       "targets": [
