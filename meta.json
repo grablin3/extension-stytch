@@ -4,14 +4,23 @@
     "id": "extension-stytch",
     "name": "Stytch Authentication",
     "kind": "extension",
+    "layers": [
+      "backend",
+      "frontend"
+    ],
     "type": "stytch",
     "description": "Add Stytch passwordless authentication and authorization with RBAC support",
+    "version": "1.0.0",
+    "author": "Genesis Team",
     "tags": [
       "authentication",
       "security",
       "oauth2",
       "rbac",
       "stytch"
+    ],
+    "providers": [
+      "aws"
     ],
     "compatibleWith": [
       "spring",
@@ -24,7 +33,7 @@
     "springProfiles": [
       "stytch"
     ],
-    "affiliateUrl": "",
+    "allowMultiple": false,
     "providesFragments": {
       "authentication-provider": {
         "mode": "conflict",
@@ -106,5 +115,12 @@
     "pip": [
       "stytch==13.28.1"
     ]
-  }
+  },
+  "generation": {
+    "layers": {
+      "backend": {},
+      "frontend": {}
+    }
+  },
+  "gitignore": []
 }

@@ -1,0 +1,137 @@
+package {{{javaPackageFull}}}.security;
+
+import {{{javaPackageFull}}}.config.StytchAuthenticationToken;
+import {{{javaPackageFull}}}.service.UserService;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
+import org.springframework.util.AntPathMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+
+/**
+ * Stytch User Sync Filter for {{{projectName}}}
+ *
+ * Runs after successful Stytch authentication to synchronize users with local database.
+ *
+ * Flow:
+ * 1. Checks if request is authenticated with StytchAuthenticationToken
+ * 2. Extracts user information from the authentication token
+ * 3. Calls UserService to upsert user with role assignment
+ * 4. Fails fast with 500 if user sync fails
+ *
+ * @see UserService#createOrUpdateUser
+ */
+@Slf4j
+@Component
+@Profile("stytch")
+public class StytchUserSyncFilter extends OncePerRequestFilter {
+
+    private final UserService userService;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
+
+    @Value("${app.security.public-uris}")
+    private String publicUris;
+
+    public StytchUserSyncFilter(UserService userService) {
+        this.userService = userService;
+    }
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+
+        // Only sync if authenticated with Stytch
+        if (auth != null && auth.isAuthenticated() && auth instanceof StytchAuthenticationToken) {
+            StytchAuthenticationToken stytchAuth = (StytchAuthenticationToken) auth;
+
+            try {
+                syncUserToDatabase(stytchAuth);
+            } catch (Exception e) {
+                log.error("Failed to sync Stytch user to database. Failing request.", e);
+                response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                response.setContentType("application/json");
+                response.getWriter().write("{\"error\":\"User synchronization failed\",\"message\":\"" + e.getMessage() + "\"}");
+                return;
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    /**
+     * Synchronizes Stytch user information to local database
+     *
+     * @param stytchAuth The Stytch authentication token containing user info
+     */
+    private void syncUserToDatabase(StytchAuthenticationToken stytchAuth) {
+        String email = stytchAuth.getEmail();
+        String stytchUserId = stytchAuth.getUserId();
+        String tenantId = stytchAuth.getTenantId();
+
+        if (StringUtils.isBlank(email)) {
+            log.error("Email not available from Stytch authentication");
+            throw new IllegalStateException("Email not available from Stytch authentication");
+        }
+
+        // Extract name from claims if available
+        String firstName = null;
+        String lastName = null;
+        String picture = null;
+
+        if (stytchAuth.getClaims() != null) {
+            Object firstNameObj = stytchAuth.getClaims().get("first_name");
+            Object lastNameObj = stytchAuth.getClaims().get("last_name");
+            Object pictureObj = stytchAuth.getClaims().get("picture");
+
+            if (firstNameObj != null) firstName = firstNameObj.toString();
+            if (lastNameObj != null) lastName = lastNameObj.toString();
+            if (pictureObj != null) picture = pictureObj.toString();
+        }
+
+        log.info("Syncing Stytch user to database: email={}, stytchUserId={}, tenantId={}", email, stytchUserId, tenantId);
+
+        // Upsert user to database
+        // UserService already handles role assignment based on app.users.root and app.users.admins
+        userService.createOrUpdateUser(
+                tenantId,
+                email,           // username same as email
+                "stytch",        // external auth provider
+                stytchUserId,    // external auth ID
+                firstName,
+                lastName,
+                picture
+        );
+
+        log.info("Successfully synced user: {}", email);
+    }
+
+    @Override
+    protected boolean shouldNotFilter(HttpServletRequest request) {
+        // Skip filter for public URIs defined in app.security.public-uris
+        String requestPath = request.getRequestURI();
+
+        if (publicUris == null || publicUris.isEmpty()) {
+            return false;
+        }
+
+        List<String> publicUriPatterns = Arrays.asList(publicUris.split(","));
+
+        return publicUriPatterns.stream()
+                .map(String::trim)
+                .anyMatch(pattern -> pathMatcher.match(pattern, requestPath));
+    }
+}

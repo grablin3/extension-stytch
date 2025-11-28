@@ -1,6 +1,3 @@
-spring:
-  profiles: stytch
-
 app:
   auth:
     provider: stytch
@@ -11,3 +8,6 @@ app:
 {{#tenantIdClaimKey}}
     tenant-id-claim-key: {{{tenantIdClaimKey}}}
 {{/tenantIdClaimKey}}
+  users:
+    root: ${SPRING_ENV_ROOT_USER:}
+    admins: ${SPRING_ENV_ADMIN_USERS:}
